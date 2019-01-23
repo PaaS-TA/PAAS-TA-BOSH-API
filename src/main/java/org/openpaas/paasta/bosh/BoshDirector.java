@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.web.client.RestTemplate;
+import org.yaml.snakeyaml.Yaml;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -274,6 +275,115 @@ public class BoshDirector {
 
     public String deleteDeployment(String deployment_name) {
         return resEntityS("/deployments/" + deployment_name, HttpMethod.DELETE, "Authorization", null);
+    }
+
+
+
+    /*
+     * 서비스 증가 및 생성
+     */
+
+
+    public boolean deploy(BoshDirector boshDirector, String deployment_name, String service_name, String ea) throws Exception {
+
+        /*
+         * Manifest 값 추출
+         */
+
+        System.out.println("Get Deployment manifest... ");
+        Map manifest_map = boshDirector.getDeployments(deployment_name);
+        if (manifest_map.size() == 0) {
+            return false;
+        }
+
+        /*
+         * ingnore 가 있으면, ingnore 해제 후 배포
+         * ingnore 가 없으면, 배포
+         * 프로세스 생성 필요
+         */
+        String manifest = manifest_map.get("manifest").toString();
+
+        System.out.println("Manifest before change......");
+
+        System.out.println(manifest_map.get("manifest").toString());
+
+        /*
+         * Manifest 값의 특정 인스턴스 값을 변환
+         */
+        manifest = manifestParser(manifest, service_name, ea);
+
+
+        System.out.println("After the change Manifest......");
+
+        System.out.println(manifest);
+
+
+        /*
+         * 현재 재배포할 Deployment가 작업중인지 확인
+         */
+        List<Map> result = boshDirector.getListRunningTasks();
+        System.out.println("Deploying Deployment checking... " + result.size());
+
+        if (result != null && result.size() > 0) {
+            for (Map map : result) {
+                System.out.println("::::: " + map.toString());
+                if (map.get("deployment").equals(deployment_name)) {
+                    return false;
+                }
+            }
+        }
+
+        /*
+         * 배포
+         */
+        System.out.println("Manifest Deploy...");
+        boshDirector.postCreateAndUpdateDeployment(manifest);
+
+        Thread.sleep(10000);
+
+        boolean processing = true;
+        System.out.println("Deploy Process Check...");
+        while (processing) {
+            List<Map> deployTask = boshDirector.getListRunningTasks();
+            if (deployTask.size() > 0) {
+                int cnt = 0;
+                for (Map map : deployTask) {
+                    if (map.get("deployment").equals(deployment_name)) {
+                        System.out.println(map.toString());
+                        System.out.println("==================================================");
+                        cnt++;
+                    }
+                }
+                if (cnt == 0) {
+                    System.out.println("COUNT :: " + cnt);
+                    return true;
+                }
+                Thread.sleep(10000);
+            } else {
+                System.out.println("END");
+                processing = false;
+            }
+        }
+        return true;
+
+    }
+
+    private String manifestParser(String manifest, String service_name, String ea) throws Exception {
+        /*
+         * String을 Map으로 변환하여, instances 값 찾아 변환
+         */
+        Yaml loader = new Yaml();
+        Map manifest_map = loader.load(manifest);
+        List<Map> instance_groups = (List<Map>) manifest_map.get("instance_groups");
+        for (Map map : instance_groups) {
+            if (map.get("name").equals(service_name)) {
+                Map instance = map;
+                instance.put("instances", ea);
+                map.put("mysql", instance);
+            }
+
+        }
+        return loader.dump(manifest_map);
     }
 
 }
