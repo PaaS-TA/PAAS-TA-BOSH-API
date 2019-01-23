@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 
-
 public class BoshDirector {
 
     private String client_id;
@@ -53,33 +52,29 @@ public class BoshDirector {
         return restTemplate.exchange(oauth_url + "/oauth/token?client_id=" + client_id + "&client_secret=" + client_secret + "&grant_type=client_credentials", HttpMethod.POST, null, OAuth2AccessToken.class).getBody();
     }
 
-    private HttpEntity<Object> getHeader(String Header_Name) {
-        if (oAuth2AccessToken.getExpiresIn() <= 180) {
-            oAuth2AccessToken = this.getAccessToken();
-        }
-        HttpHeaders reqHeaders = new HttpHeaders();
-        reqHeaders.add(Header_Name, oAuth2AccessToken.getTokenType() + " " + oAuth2AccessToken.getValue());
-        reqHeaders.add("Content-Type", "application/json");
-        return new HttpEntity<>(reqHeaders);
-    }
 
-    private HttpEntity<Object> postHeader(String Header_Name, String param) {
+    private HttpEntity<Object> getHeader(String Header_Name, String param) {
         if (oAuth2AccessToken.getExpiresIn() <= 180) {
             oAuth2AccessToken = this.getAccessToken();
         }
         HttpHeaders reqHeaders = new HttpHeaders();
         reqHeaders.add(Header_Name, oAuth2AccessToken.getTokenType() + " " + oAuth2AccessToken.getValue());
         reqHeaders.add("Content-Type", "application/json");
-        return new HttpEntity<>(param, reqHeaders);
+        HttpEntity httpEntity = null;
+        if (param != null) {
+            httpEntity = new HttpEntity<>(param, reqHeaders);
+        } else {
+            httpEntity = new HttpEntity<>(reqHeaders);
+        }
+        return httpEntity;
     }
 
     private List<Map> resEntityList(String endpoint, HttpMethod method, String Headername, String param) {
         String json = "";
         if (param != null) {
-            json = restTemplate.exchange(bosh_url + endpoint, method, postHeader(Headername, param), String.class).getBody();
-            System.out.println(json);
-        }else {
-            json = restTemplate.exchange(bosh_url + endpoint, method, getHeader(Headername), String.class).getBody();
+            json = restTemplate.exchange(bosh_url + endpoint, method, getHeader(Headername, param), String.class).getBody();
+        } else {
+            json = restTemplate.exchange(bosh_url + endpoint, method, getHeader(Headername, null), String.class).getBody();
         }
         try {
             return objectMapper.readValue(json, new TypeReference<List<Map>>() {
@@ -95,9 +90,9 @@ public class BoshDirector {
     private Map resEntityMap(String endpoint, HttpMethod method, String Headername, String param) {
         String json = "";
         if (param != null) {
-            json = restTemplate.exchange(bosh_url + endpoint, method, postHeader(Headername, param), String.class).getBody();
+            json = restTemplate.exchange(bosh_url + endpoint, method, getHeader(Headername, param), String.class).getBody();
         }
-        json = restTemplate.exchange(bosh_url + endpoint, method, getHeader(Headername), String.class).getBody();
+        json = restTemplate.exchange(bosh_url + endpoint, method, getHeader(Headername, null), String.class).getBody();
 
         try {
             return objectMapper.readValue(json, Map.class);
@@ -111,16 +106,16 @@ public class BoshDirector {
 
     private String resEntityS(String endpoint, HttpMethod method, String Headername, String param) {
         if (param != null) {
-            return restTemplate.exchange(bosh_url + endpoint, method, postHeader(Headername, param), String.class).getBody();
+            return restTemplate.exchange(bosh_url + endpoint, method, getHeader(Headername, param), String.class).getBody();
         }
-        return restTemplate.exchange(bosh_url + endpoint, method, getHeader(Headername), String.class).getBody();
+        return restTemplate.exchange(bosh_url + endpoint, method, getHeader(Headername, null), String.class).getBody();
     }
 
     private Map resEntityM(String endpoint, HttpMethod method, String Headername, String param) {
         if (param != null) {
-            return restTemplate.exchange(bosh_url + endpoint, method, postHeader(Headername, param), Map.class).getBody();
+            return restTemplate.exchange(bosh_url + endpoint, method, getHeader(Headername, param), Map.class).getBody();
         }
-        return restTemplate.exchange(bosh_url + endpoint, method, getHeader(Headername), Map.class).getBody();
+        return restTemplate.exchange(bosh_url + endpoint, method, getHeader(Headername, null), Map.class).getBody();
     }
 
     ///// get /////
@@ -258,9 +253,9 @@ public class BoshDirector {
     }
 
     ///// put /////
-    public List<Map> updateIgnoreInstance(String deployment_name, String instance_name, String instance_id, boolean ignore){
-        String param = "{\"ignore\":"+ignore+"}";
-        return resEntityList("/deployments/"+deployment_name+"/instance_groups/"+instance_name+"/"+instance_id+"/ignore", HttpMethod.PUT, "Authorization", param);
+    public List<Map> updateIgnoreInstance(String deployment_name, String instance_name, String instance_id, boolean ignore) {
+        String param = "{\"ignore\":" + ignore + "}";
+        return resEntityList("/deployments/" + deployment_name + "/instance_groups/" + instance_name + "/" + instance_id + "/ignore", HttpMethod.PUT, "Authorization", param);
     }
 
 
