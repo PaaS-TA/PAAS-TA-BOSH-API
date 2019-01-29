@@ -1,6 +1,7 @@
 package org.openpaas.paasta.bosh;
 
 
+import org.openpaas.paasta.bosh.code.BoshCode;
 import org.openpaas.paasta.bosh.director.BoshDirector;
 
 import java.util.*;
