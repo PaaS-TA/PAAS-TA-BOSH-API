@@ -1,7 +1,8 @@
-package org.openpaas.paasta.bosh;
+package org.openpaas.paasta.bosh.director;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.openpaas.paasta.bosh.code.BoshCode;
 import org.openpaas.paasta.bosh.util.SSLUtils;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -12,11 +13,12 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 
-public class BoshDirector {
+public class BoshDirector extends BoshCode {
 
     private String client_id;
 
@@ -34,6 +36,7 @@ public class BoshDirector {
 
     final RestTemplate restTemplate = new RestTemplate();
 
+
     public BoshDirector(String client_id, String client_secret, String bosh_url, String oauth_url) {
         this.client_id = client_id;
         this.client_secret = client_secret;
@@ -42,6 +45,7 @@ public class BoshDirector {
         try {
             SSLUtils.turnOffSslChecking();
             oAuth2AccessToken = this.getAccessToken();
+            System.out.println(oAuth2AccessToken.getValue());
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (KeyManagementException e) {
@@ -54,7 +58,7 @@ public class BoshDirector {
     }
 
 
-    private HttpEntity<Object> getHeader(String Header_Name, String param) {
+    private HttpEntity<Object> getHeader(String Header_Name, Object param) {
         if (oAuth2AccessToken.getExpiresIn() <= 180) {
             oAuth2AccessToken = this.getAccessToken();
         }
@@ -70,7 +74,7 @@ public class BoshDirector {
         return httpEntity;
     }
 
-    private List<Map> resEntityList(String endpoint, HttpMethod method, String Headername, String param) {
+    private List<Map> resEntityList(String endpoint, HttpMethod method, String Headername, Object param) {
         String json = "";
         if (param != null) {
             json = restTemplate.exchange(bosh_url + endpoint, method, getHeader(Headername, param), String.class).getBody();
@@ -88,7 +92,7 @@ public class BoshDirector {
         return null;
     }
 
-    private Map resEntityMap(String endpoint, HttpMethod method, String Headername, String param) {
+    private Map resEntityMap(String endpoint, HttpMethod method, String Headername, Object param) {
         String json = "";
         if (param != null) {
             json = restTemplate.exchange(bosh_url + endpoint, method, getHeader(Headername, param), String.class).getBody();
@@ -259,6 +263,12 @@ public class BoshDirector {
         return resEntityList("/deployments/" + deployment_name + "/instance_groups/" + instance_name + "/" + instance_id + "/ignore", HttpMethod.PUT, "Authorization", param);
     }
 
+    public List<Map> updateInstanceState(String deployment_name, String job_name, String job_id, String state) {
+        Map param = new HashMap();
+        param.put("state", state);
+        return resEntityList("/deployments/" + deployment_name + "/jobs/" + job_name + "/" + job_id, HttpMethod.PUT, "Authorization", param);
+    }
+
 
     ///// delete /////
 
@@ -284,21 +294,21 @@ public class BoshDirector {
      */
 
 
-    public boolean deploy(BoshDirector boshDirector, String deployment_name, String service_name, String ea) throws Exception {
+    public boolean deploy(String deployment_name, String service_name, String ea) throws Exception {
 
         /*
          * Manifest 값 추출
          */
 
         System.out.println("Get Deployment manifest... ");
-        Map manifest_map = boshDirector.getDeployments(deployment_name);
+        Map manifest_map = getDeployments(deployment_name);
         if (manifest_map.size() == 0) {
             return false;
         }
 
         /*
-         * ingnore 가 있으면, ingnore 해제 후 배포
-         * ingnore 가 없으면, 배포
+         * ignore 가 있으면, ignore 해제 후 배포
+         * ignore 가 없으면, 배포
          * 프로세스 생성 필요
          */
         String manifest = manifest_map.get("manifest").toString();
@@ -321,7 +331,7 @@ public class BoshDirector {
         /*
          * 현재 재배포할 Deployment가 작업중인지 확인
          */
-        List<Map> result = boshDirector.getListRunningTasks();
+        List<Map> result = getListRunningTasks();
         System.out.println("Deploying Deployment checking... " + result.size());
 
         if (result != null && result.size() > 0) {
@@ -337,14 +347,14 @@ public class BoshDirector {
          * 배포
          */
         System.out.println("Manifest Deploy...");
-        boshDirector.postCreateAndUpdateDeployment(manifest);
+        postCreateAndUpdateDeployment(manifest);
 
         Thread.sleep(10000);
 
         boolean processing = true;
         System.out.println("Deploy Process Check...");
         while (processing) {
-            List<Map> deployTask = boshDirector.getListRunningTasks();
+            List<Map> deployTask = getListRunningTasks();
             if (deployTask.size() > 0) {
                 int cnt = 0;
                 for (Map map : deployTask) {
@@ -384,6 +394,21 @@ public class BoshDirector {
 
         }
         return loader.dump(manifest_map);
+    }
+
+
+    public Map getIgnore(String deployment_name) {
+        Map ignore = null;
+        List<Map> maps = getListInstances(deployment_name);
+        for (Map map : maps) {
+            if (map.get("expects_vm").equals("false")) {
+                System.out.println(map.get("job") + " " + map.get("id") + "  " + map.get("expects_vm"));
+                System.out.println("==================================================");
+                ignore = map;
+            }
+        }
+
+        return ignore;
     }
 
 }

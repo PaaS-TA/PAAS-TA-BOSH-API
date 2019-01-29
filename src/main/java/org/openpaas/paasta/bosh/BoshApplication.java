@@ -1,109 +1,105 @@
 package org.openpaas.paasta.bosh;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.javafx.collections.MappingChange;
-import org.yaml.snakeyaml.Yaml;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.StringJoiner;
+import org.openpaas.paasta.bosh.director.BoshDirector;
+
+import java.util.*;
 
 public class BoshApplication {
     public static void main(String[] args) {
         BoshDirector boshDirector = new BoshDirector("admin", "idg3k30h72zq61yvg7nz", "https://localhost:25555", "https://localhost:8443");
 
-//        System.out.println("1::::::::::::::::::::::::::::::::::::::::::::::::");
-//        Map result1 = boshDirector.getInfo();
-//        System.out.println(result1);
-//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
-//        System.out.println("");
-//        System.out.println("2::::::::::::::::::::::::::::::::::::::::::::::::");
-//
-//        List<Map> result2 = boshDirector.getListDeployments();
-//        for (Map map : result2) {
-//            System.out.println(map.toString());
-//            System.out.println("==================================================");
-//        }
-//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
-//        System.out.println("");
-//        System.out.println("3::::::::::::::::::::::::::::::::::::::::::::::::");
-//
-//        Map result3 = boshDirector.getDeployments("webide-broker-service");
-//        System.out.println(result3.get("manifest").toString());
-//
-//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
-//        System.out.println("");
-//        System.out.println("4::::::::::::::::::::::::::::::::::::::::::::::::");
-//        List<Map> result4 = boshDirector.getListEvents();
-//        for (Map map : result4) {
-//            System.out.println(map.toString());
-//            System.out.println("==================================================");
-//        }
-//
-//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
-//        System.out.println("");
-//        System.out.println("5::::::::::::::::::::::::::::::::::::::::::::::::");
-//        Map result5 = boshDirector.getEvents("2830");
-//        System.out.println(result5);
-//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
-//        System.out.println("");
-//        System.out.println("6::::::::::::::::::::::::::::::::::::::::::::::::");
-//        List<Map> result6 = boshDirector.getListTasks();
-//        for (Map map : result6) {
-//            System.out.println(map.toString());
-//            System.out.println("==================================================");
-//        }
-//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
-//        System.out.println("");
-//        System.out.println("7::::::::::::::::::::::::::::::::::::::::::::::::");
-//        Map result7 = boshDirector.getTask("1");
-//        System.out.println(result7);
-//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
-//        System.out.println("");
-//        System.out.println("8::::::::::::::::::::::::::::::::::::::::::::::::");
-//        List<Map> result8 = boshDirector.getListStemcells();
-//        for (Map map : result8) {
-//            System.out.println(map.toString());
-//            System.out.println("==================================================");
-//        }
-//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
-//        System.out.println("");
-//        System.out.println("9::::::::::::::::::::::::::::::::::::::::::::::::");
-//        List<Map> result9 = boshDirector.getListInstances("paasta");
-//        for (Map map : result9) {
-//            System.out.println(map.toString());
-//            System.out.println("==================================================");
-//        }
-//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
-//        System.out.println("");
-//        System.out.println("10::::::::::::::::::::::::::::::::::::::::::::::::");
-//        List<Map> result10 = boshDirector.getListDetailDeploymentsVMS("paasta");
-//        for (Map map : result10) {
-//            System.out.println(map.toString());
-//            System.out.println("==================================================");
-//        }
-//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
-//        System.out.println("");
-//        System.out.println("11::::::::::::::::::::::::::::::::::::::::::::::::");
-//        List<Map> result11 = boshDirector.getListDeploymentsVMS("paasta");
-//        for (Map map : result11) {
-//            System.out.println(map.toString());
-//            System.out.println("==================================================");
-//        }
-//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
-//        System.out.println("");
-//        System.out.println("12::::::::::::::::::::::::::::::::::::::::::::::::");
-//        List<Map> result12 = boshDirector.getListDeploymentAssociatedWithTasks("paasta");
-//        for (Map map : result12) {
-//            System.out.println(map.toString());
-//            System.out.println("==================================================");
-//        }
-//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
-//        System.out.println("");
-//        System.out.println("13::::::::::::::::::::::::::::::::::::::::::::::::");
-//
-//        boolean processing = true;
+        System.out.println("1::::::::::::::::::::::::::::::::::::::::::::::::");
+        Map result1 = boshDirector.getInfo();
+        System.out.println(result1);
+        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println("");
+        System.out.println("2::::::::::::::::::::::::::::::::::::::::::::::::");
+
+        List<Map> result2 = boshDirector.getListDeployments();
+        for (Map map : result2) {
+            System.out.println(map.toString());
+            System.out.println("==================================================");
+        }
+        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println("");
+        System.out.println("3::::::::::::::::::::::::::::::::::::::::::::::::");
+
+        Map result3 = boshDirector.getDeployments("webide-broker-service");
+        System.out.println(result3.get("manifest").toString());
+
+        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println("");
+        System.out.println("4::::::::::::::::::::::::::::::::::::::::::::::::");
+        List<Map> result4 = boshDirector.getListEvents();
+        for (Map map : result4) {
+            System.out.println(map.toString());
+            System.out.println("==================================================");
+        }
+
+        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println("");
+        System.out.println("5::::::::::::::::::::::::::::::::::::::::::::::::");
+        Map result5 = boshDirector.getEvents("2830");
+        System.out.println(result5);
+        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println("");
+        System.out.println("6::::::::::::::::::::::::::::::::::::::::::::::::");
+        List<Map> result6 = boshDirector.getListTasks();
+        for (Map map : result6) {
+            System.out.println(map.toString());
+            System.out.println("==================================================");
+        }
+        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println("");
+        System.out.println("7::::::::::::::::::::::::::::::::::::::::::::::::");
+        Map result7 = boshDirector.getTask("1");
+        System.out.println(result7);
+        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println("");
+        System.out.println("8::::::::::::::::::::::::::::::::::::::::::::::::");
+        List<Map> result8 = boshDirector.getListStemcells();
+        for (Map map : result8) {
+            System.out.println(map.toString());
+            System.out.println("==================================================");
+        }
+        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println("");
+        System.out.println("9::::::::::::::::::::::::::::::::::::::::::::::::");
+        List<Map> result9 = boshDirector.getListInstances("paasta");
+        for (Map map : result9) {
+            System.out.println(map.toString());
+            System.out.println("==================================================");
+        }
+        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println("");
+        System.out.println("10::::::::::::::::::::::::::::::::::::::::::::::::");
+        List<Map> result10 = boshDirector.getListDetailDeploymentsVMS("paasta");
+        for (Map map : result10) {
+            System.out.println(map.toString());
+            System.out.println("==================================================");
+        }
+        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println("");
+        System.out.println("11::::::::::::::::::::::::::::::::::::::::::::::::");
+        List<Map> result11 = boshDirector.getListDeploymentsVMS("paasta");
+        for (Map map : result11) {
+            System.out.println(map.toString());
+            System.out.println("==================================================");
+        }
+        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println("");
+        System.out.println("12::::::::::::::::::::::::::::::::::::::::::::::::");
+        List<Map> result12 = boshDirector.getListDeploymentAssociatedWithTasks("paasta");
+        for (Map map : result12) {
+            System.out.println(map.toString());
+            System.out.println("==================================================");
+        }
+        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println("");
+        System.out.println("13::::::::::::::::::::::::::::::::::::::::::::::::");
+
+        boolean processing = true;
 //        while (processing) {
 //            List<Map> result13 = boshDirector.getListRunningTasks();
 //
@@ -123,38 +119,38 @@ public class BoshApplication {
 //            }
 //        }
 
-//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
-//        System.out.println("");
-//        System.out.println("14::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println("");
+        System.out.println("14::::::::::::::::::::::::::::::::::::::::::::::::");
 //        List<Map> result14 = boshDirector.getListContextIDAssociatedWithTasks();
 //        for (Map map : result14) {
 //            System.out.println(map.toString());
 //            System.out.println("==================================================");
 //        }
-//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
-//        System.out.println("");
-//        System.out.println("15::::::::::::::::::::::::::::::::::::::::::::::::");
-//        List<Map> result15 = boshDirector.getListDeploymentsWithoutCRS();
-//        for (Map map : result15) {
-//            System.out.println(map.toString());
-//            System.out.println("==================================================");
-//        }
+        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println("");
+        System.out.println("15::::::::::::::::::::::::::::::::::::::::::::::::");
+        List<Map> result15 = boshDirector.getListDeploymentsWithoutCRS();
+        for (Map map : result15) {
+            System.out.println(map.toString());
+            System.out.println("==================================================");
+        }
 
-//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
-//        System.out.println("");
-//        System.out.println("16::::::::::::::::::::::::::::::::::::::::::::::::");
-//        List<Map> result16 = boshDirector.getUploadReleases();
-//        for (Map map : result16) {
-//            System.out.println(map.toString());
-//            System.out.println("==================================================");
-//        }
+        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println("");
+        System.out.println("16::::::::::::::::::::::::::::::::::::::::::::::::");
+        List<Map> result16 = boshDirector.getUploadReleases();
+        for (Map map : result16) {
+            System.out.println(map.toString());
+            System.out.println("==================================================");
+        }
 
 
-//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
-//        System.out.println("");
-//        System.out.println("17::::::::::::::::::::::::::::::::::::::::::::::::");
-//        Map result17 = boshDirector.getRetrieveTasksLog("1","event");
-//        System.out.println(result17.toString());
+        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+        System.out.println("");
+        System.out.println("17::::::::::::::::::::::::::::::::::::::::::::::::");
+        Map result17 = boshDirector.getRetrieveTasksLog("1","event");
+        System.out.println(result17.toString());
 
 //        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
 //        System.out.println("");
@@ -224,10 +220,10 @@ public class BoshApplication {
 //                "  serial: false\n" +
 //                "  update_watch_time: 5000-120000";
 //        boshDirector.postCreateAndUpdateDeployment(instance);
-        System.out.println(boshDirector.getListInstances("webide-broker-service").toString());
-//        BoshApplication boshApplication = new BoshApplication();
+//        System.out.println(boshDirector.getListInstances("webide-broker-service").toString());
+
 //        try {
-//            if (boshApplication.deploy(boshDirector, "webide-broker-service", "mariadb", "3")) {
+//            if (boshDirector.deploy("webide-broker-service", "mariadb", "3")) {
 //                System.out.println("Deploy Complate");
 //            } else {
 //                System.out.println("Deploy Fails");
@@ -235,11 +231,44 @@ public class BoshApplication {
 //        } catch (Exception e) {
 //            e.printStackTrace();
 //        }
-//
+
 //        boshDirector.updateIgnoreInstance("webide-broker-service", "mariadb", "7b7612ad-de00-460f-839a-3ddc2e77f074", false);
+
+//        List<Map> maps = boshDirector.getListInstances("webide-broker-service");
+//        for (Map map : maps) {
+//            System.out.println(map.get("job") + " " + map.get("id") + "  " + map.get("expects_vm"));
+//            System.out.println(map.toString());
+//            System.out.println("==================================================");
+//        }
+//        System.out.println("");
+//        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
+//        Map map = boshDirector.getIgnore("webide-broker-service");
+//        System.out.println(map);
+
+
+//        boolean processing = true;
+//        System.out.println("Deploy Process Check...");
+//        int i = 1;
+//        try {
+//            while (processing) {
+//                List<Map> deployTask = boshDirector.getListRunningTasks();
+//                int cnt = 0;
+//                for (Map map : deployTask) {
+//
+//                    System.out.println(map.toString());
+//                    System.out.println("==================================================");
+//
+//                }
+//                System.out.println("::::::::::::::::::::::::: " + i++);
+//                Thread.sleep(10000);
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+
+        boshDirector.updateInstanceState("paasta-mysql-service","mysql","a0855749-0994-4d4d-b9ce-77a85f797b57",BoshDirector.INSTANCE_STATE_DETACHED);
+
     }
-
-
 
 
 }
