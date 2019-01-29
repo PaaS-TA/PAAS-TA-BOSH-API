@@ -100,25 +100,25 @@ public class BoshApplication {
 //        System.out.println("");
 //        System.out.println("13::::::::::::::::::::::::::::::::::::::::::::::::");
 //
-//        boolean processing = true;
-//        while (processing) {
-//            List<Map> result13 = boshDirector.getListRunningTasks();
-//
-//            if (result13.size() > 0) {
-//                for (Map map : result13) {
-//                    System.out.println(map.toString());
-//                    System.out.println("==================================================");
-//                }
-//                try {
-//                    Thread.sleep(10000);
-//                } catch (Exception e) {
-//
-//                }
-//            } else {
-//                System.out.println("END");
-//                processing = false;
-//            }
-//        }
+        boolean processing = true;
+        while (processing) {
+            List<Map> result13 = boshDirector.getListRunningTasks();
+
+            if (result13.size() > 0) {
+                for (Map map : result13) {
+                    System.out.println(map.toString());
+                    System.out.println("==================================================");
+                }
+                try {
+                    Thread.sleep(10000);
+                } catch (Exception e) {
+
+                }
+            } else {
+                System.out.println("END");
+                processing = false;
+            }
+        }
 
 //        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
 //        System.out.println("");
@@ -267,7 +267,11 @@ public class BoshApplication {
 //            e.printStackTrace();
 //        }
 
-        boshDirector.updateInstanceState("paasta-mysql-service","mysql","a0855749-0994-4d4d-b9ce-77a85f797b57",BoshDirector.INSTANCE_STATE_DETACHED);
+//        if(boshDirector.updateInstanceState("paasta-mysql-service","mysql","a0855749-0994-4d4d-b9ce-77a85f797b57",BoshDirector.INSTANCE_STATE_START)){
+//            System.out.println("성공");
+//        }else{
+//            System.out.println("실패");
+//        }
 
     }
 
