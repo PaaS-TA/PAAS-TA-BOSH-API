@@ -245,13 +245,7 @@ public class BoshDirector extends BoshCode {
     }
 
     public String postCreateAndUpdateDeployment(String param) {
-        if (oAuth2AccessToken.getExpiresIn() <= 180) {
-            oAuth2AccessToken = this.getAccessToken();
-        }
-        HttpHeaders reqHeaders = new HttpHeaders();
-        reqHeaders.add(ContentsType.TextYaml, oAuth2AccessToken.getTokenType() + " " + oAuth2AccessToken.getValue());
-        reqHeaders.add("Content-Type", "text/yaml");
-        return restTemplate.exchange(bosh_url + "/deployments", HttpMethod.POST, new HttpEntity<>(param, reqHeaders), String.class).getBody();
+        return restTemplate.exchange(bosh_url + "/deployments", HttpMethod.POST, getHeader(ContentsType.TextXml, param), String.class).getBody();
     }
 
     ///// put /////
@@ -300,60 +294,87 @@ public class BoshDirector extends BoshCode {
     public boolean deploy(String deployment_name, String service_name, String ea) throws Exception {
 
         /*
-         * Manifest 값 추출
+         * 1. 인스턴스 상태 확인 - STOP인 애들이 있으면, 그애들을 Start로 활성화
+         * 2. 없으면, 매니페스트 파일 추출
+         * 3. 매니페스트 instance수를 늘리기
+         * 4. 배포
          */
 
-        System.out.println("Get Deployment manifest... ");
-        Map manifest_map = getDeployments(deployment_name);
-        if (manifest_map.size() == 0) {
-            return false;
-        }
+        int start_instance = 0;
+        List<Map> instances = getListInstances(deployment_name);
 
-        /*
-         * ignore 가 있으면, ignore 해제 후 배포
-         * ignore 가 없으면, 배포
-         * 프로세스 생성 필요
-         */
-        String manifest = manifest_map.get("manifest").toString();
-
-        System.out.println("Manifest before change......");
-
-        System.out.println(manifest_map.get("manifest").toString());
-
-        /*
-         * Manifest 값의 특정 인스턴스 값을 변환
-         */
-        manifest = manifestParser(manifest, service_name, ea);
-
-
-        System.out.println("After the change Manifest......");
-
-        System.out.println(manifest);
-
-
-        /*
-         * 현재 재배포할 Deployment가 작업중인지 확인
-         */
-        List<Map> result = getListRunningTasks();
-        System.out.println("Deploying Deployment checking... " + result.size());
-
-        if (result != null && result.size() > 0) {
-            for (Map map : result) {
-                System.out.println("::::: " + map.toString());
-                if (map.get("deployment").equals(deployment_name)) {
-                    return false;
+        for (Map instance : instances) {
+            System.out.println(instance.toString());
+            if (instance.get("job").equals(service_name)) {
+                if (instance.get("cid") == null) {
+                    try {
+                        updateInstanceState(deployment_name, service_name, instance.get("id").toString(), BoshDirector.INSTANCE_STATE_START);
+                        start_instance++;
+                    }catch (Exception e){
+                        System.out.println(e.getLocalizedMessage());
+                    }
+                    break;
                 }
             }
         }
+        if(start_instance == 0){
+            /*
+             * Manifest 값 추출
+             */
 
-        /*
-         * 배포
-         */
-        System.out.println("Manifest Deploy...");
-        postCreateAndUpdateDeployment(manifest);
+            System.out.println("Get Deployment manifest... ");
+            Map manifest_map = getDeployments(deployment_name);
+            if (manifest_map.size() == 0) {
+                return false;
+            }
+
+
+            String manifest = manifest_map.get("manifest").toString();
+            System.out.println("Manifest before change......");
+            System.out.println(manifest_map.get("manifest").toString());
+
+            /*
+             * Manifest 값의 특정 인스턴스 값을 변환
+             */
+            manifest = manifestParser(manifest, service_name, ea);
+            System.out.println("After the change Manifest......");
+            System.out.println(manifest);
+
+
+            /*
+             * 현재 재배포할 Deployment가 작업중인지 확인
+             */
+            List<Map> result = getListRunningTasks();
+            System.out.println("Deploying Deployment checking... " + result.size());
+
+            if (result != null && result.size() > 0) {
+                for (Map map : result) {
+                    System.out.println("::::: " + map.toString());
+                    if (map.get("deployment").equals(deployment_name)) {
+                        return false;
+                    }
+                }
+            }
+
+            /*
+             * 배포
+             */
+            System.out.println("Manifest Deploy...");
+            postCreateAndUpdateDeployment(manifest);
+
+        }
 
         Thread.sleep(10000);
+        if (deployTask(deployment_name)) {
+            return true;
+        }else{
+            return false;
+        }
 
+    }
+
+
+    private boolean deployTask(String deployment_name) throws Exception {
         boolean processing = true;
         System.out.println("Deploy Process Check...");
         while (processing) {
@@ -378,8 +399,8 @@ public class BoshDirector extends BoshCode {
             }
         }
         return true;
-
     }
+
 
     private String manifestParser(String manifest, String service_name, String ea) throws Exception {
         /*

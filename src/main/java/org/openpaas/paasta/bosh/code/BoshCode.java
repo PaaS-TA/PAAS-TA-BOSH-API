@@ -1,7 +1,7 @@
 package org.openpaas.paasta.bosh.code;
 
 public class BoshCode {
-    public static String INSTANCE_STATE_START = "stated";
+    public static String INSTANCE_STATE_START = "started";
     public static String INSTANCE_STATE_DETACHED = "detached";
 
     public static class ContentsType{

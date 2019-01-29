@@ -9,7 +9,7 @@ import java.util.*;
 public class BoshApplication {
     public static void main(String[] args) {
         BoshDirector boshDirector = new BoshDirector("admin", "idg3k30h72zq61yvg7nz", "https://localhost:25555", "https://localhost:8443");
-//
+
 //        System.out.println("1::::::::::::::::::::::::::::::::::::::::::::::::");
 //        Map result1 = boshDirector.getInfo();
 //        System.out.println(result1);
@@ -54,7 +54,7 @@ public class BoshApplication {
 //        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
 //        System.out.println("");
 //        System.out.println("7::::::::::::::::::::::::::::::::::::::::::::::::");
-//        Map result7 = boshDirector.getTask("1");
+//        Map result7 = boshDirector.getTask("35");
 //        System.out.println(result7);
 //        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
 //        System.out.println("");
@@ -99,26 +99,26 @@ public class BoshApplication {
 //        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
 //        System.out.println("");
 //        System.out.println("13::::::::::::::::::::::::::::::::::::::::::::::::");
+
+//        boolean processing = true;
+//        while (processing) {
+//            List<Map> result13 = boshDirector.getListRunningTasks();
 //
-        boolean processing = true;
-        while (processing) {
-            List<Map> result13 = boshDirector.getListRunningTasks();
-
-            if (result13.size() > 0) {
-                for (Map map : result13) {
-                    System.out.println(map.toString());
-                    System.out.println("==================================================");
-                }
-                try {
-                    Thread.sleep(10000);
-                } catch (Exception e) {
-
-                }
-            } else {
-                System.out.println("END");
-                processing = false;
-            }
-        }
+//            if (result13.size() > 0) {
+//                for (Map map : result13) {
+//                    System.out.println(map.toString());
+//                    System.out.println("==================================================");
+//                }
+//                try {
+//                    Thread.sleep(10000);
+//                } catch (Exception e) {
+//
+//                }
+//            } else {
+//                System.out.println("END");
+//                processing = false;
+//            }
+//        }
 
 //        System.out.println(":::::::::::::::::::::::::::::::::::::::::::::::::");
 //        System.out.println("");
@@ -266,12 +266,16 @@ public class BoshApplication {
 //        } catch (Exception e) {
 //            e.printStackTrace();
 //        }
+        try {
+            if (boshDirector.deploy("paasta-mysql-service", "mysql", "3")) {
+                System.out.println("성공");
+            } else {
+                System.out.println("실패");
+            }
 
-//        if(boshDirector.updateInstanceState("paasta-mysql-service","mysql","a0855749-0994-4d4d-b9ce-77a85f797b57",BoshDirector.INSTANCE_STATE_START)){
-//            System.out.println("성공");
-//        }else{
-//            System.out.println("실패");
-//        }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
     }
 
