@@ -9,11 +9,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.web.client.RestTemplate;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -73,38 +73,24 @@ public class BoshDirector extends BoshCode {
         return httpEntity;
     }
 
-    private List<Map> resEntityList(String endpoint, HttpMethod method, String context_type, Object param) {
+    private List<Map> resEntityList(String endpoint, HttpMethod method, String context_type, Object param) throws Exception {
         String json = "";
         if (param != null) {
             json = restTemplate.exchange(bosh_url + endpoint, method, getHeader(context_type, param), String.class).getBody();
         } else {
             json = restTemplate.exchange(bosh_url + endpoint, method, getHeader(context_type, null), String.class).getBody();
         }
-        try {
-            return objectMapper.readValue(json, new TypeReference<List<Map>>() {
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-            new Exception();
-
-        }
-        return null;
+        return objectMapper.readValue(json, new TypeReference<List<Map>>() {
+        });
     }
 
-    private Map resEntityMap(String endpoint, HttpMethod method, String context_type, Object param) {
+    private Map resEntityMap(String endpoint, HttpMethod method, String context_type, Object param) throws Exception {
         String json = "";
         if (param != null) {
             json = restTemplate.exchange(bosh_url + endpoint, method, getHeader(context_type, param), String.class).getBody();
         }
         json = restTemplate.exchange(bosh_url + endpoint, method, getHeader(context_type, null), String.class).getBody();
-
-        try {
-            return objectMapper.readValue(json, Map.class);
-        } catch (Exception e) {
-            e.printStackTrace();
-            new Exception();
-        }
-        return null;
+        return objectMapper.readValue(json, Map.class);
     }
 
 
@@ -146,122 +132,125 @@ public class BoshDirector extends BoshCode {
 
 
     //List all tasks
-    public List<Map> getListTasks() {
+    public List<Map> getListTasks() throws Exception {
         return resEntityList("/tasks", HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //List currently running tasks
-    public List<Map> getListRunningTasks() {
+    public List<Map> getListRunningTasks() throws Exception {
         return resEntityList("/tasks?state=queued,processing,cancelling", HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //List tasks associated with a deployment
-    public List<Map> getListDeploymentAssociatedWithTasks(String deployment_name) {
+    public List<Map> getListDeploymentAssociatedWithTasks(String deployment_name) throws Exception {
         return resEntityList("/tasks?deployment=" + deployment_name, HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //List tasks associated with a context ID
-    public List<Map> getListContextIDAssociatedWithTasks(String context_id) {
+    public List<Map> getListContextIDAssociatedWithTasks(String context_id) throws Exception {
         return resEntityList("/tasks?context_id=" + context_id, HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //Retrieve single task
-    public Map getTask(String task_id) {
+    public Map getTask(String task_id) throws Exception {
         return resEntityMap("/tasks/" + task_id, HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //Retrieve task's log(tpye ex.. debug, event, result)
-    public Map getRetrieveTasksLog(String task_id, String type) {
+    public Map getRetrieveTasksLog(String task_id, String type) throws Exception {
         return resEntityMap("/tasks/" + task_id + "/output?type=" + type, HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //List all uploaded stemcells
-    public List<Map> getListStemcells() {
+    public List<Map> getListStemcells() throws Exception {
         return resEntityList("/stemcells", HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //List all uploaded stemcells
-    public List<Map> getUploadReleases() {
+    public List<Map> getUploadReleases() throws Exception {
         return resEntityList("/releases", HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //List all deployments
-    public List<Map> getListDeployments() {
+    public List<Map> getListDeployments() throws Exception {
         return resEntityList("/deployments", HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //List all deployments without configs, releases, and stemcells
-    public List<Map> getListDeploymentsWithoutCRS() {
+    public List<Map> getListDeploymentsWithoutCRS() throws Exception {
         return resEntityList("/deployments?exclude_configs=true&exclude_releases=true&exclude_stemcells=true", HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //Retrieve single deployment
-    public Map getDeployments(String deployment_name) {
+    public Map getDeployments(String deployment_name) throws Exception {
         return resEntityMap("/deployments/" + deployment_name, HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //List all instances
-    public List<Map> getListInstances(String deployment_name) {
+    public List<Map> getListInstances(String deployment_name) throws Exception {
         return resEntityList("/deployments/" + deployment_name + "/instances", HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //List details of instances
-    public List<Map> getListDetailOfInstances(String deployment_name) {
+    public List<Map> getListDetailOfInstances(String deployment_name) throws Exception {
         return resEntityList("/deployments/" + deployment_name + "/instances?format=full", HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //List all VMs
-    public List<Map> getListDeploymentsVMS(String deployment_name) {
+    public List<Map> getListDeploymentsVMS(String deployment_name) throws Exception {
         return resEntityList("/deployments/" + deployment_name + "/vms", HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //List VM details
-    public List<Map> getListDetailDeploymentsVMS(String deployment_name) {
+    public List<Map> getListDetailDeploymentsVMS(String deployment_name) throws Exception {
         return resEntityList("/deployments/" + deployment_name + "/vms?format=full", HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //List events
-    public List<Map> getListEvents() {
+    public List<Map> getListEvents() throws Exception {
         return resEntityList("/events", HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //List events
-    public Map getEvents(String event_id) {
+    public Map getEvents(String event_id) throws Exception {
         return resEntityMap("/events/" + event_id, HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     ///// post /////
 
     //Create config
-    public String postCreateConfigs(String name, String type, String content) {
+    public String postCreateConfigs(String name, String type, String content) throws Exception {
         String param = "{\"name\": \"" + name + "\", \"type\": \"" + type + "\", \"content\": \"" + content + "\"}";
         return resEntityS("/configs", HttpMethod.POST, ContentsType.TextYaml, param);
     }
 
     //Diff config
-    public String postDiffConfig(String name, String type, String content) {
+    public String postDiffConfig(String name, String type, String content) throws Exception {
         String param = "{\"name\": \"" + name + "\", \"type\": \"" + type + "\", \"content\": \"" + content + "\"}";
         return resEntityS("/configs/diff", HttpMethod.POST, ContentsType.TextYaml, param);
     }
 
-    public String postCreateAndUpdateDeployment(String param) {
-        return restTemplate.exchange(bosh_url + "/deployments", HttpMethod.POST, getHeader(ContentsType.TextXml, param), String.class).getBody();
+    public String postCreateAndUpdateDeployment(String param) throws Exception {
+        return restTemplate.exchange(bosh_url + "/deployments", HttpMethod.POST, getHeader(ContentsType.TextYaml, param), String.class).getBody();
     }
 
     ///// put /////
-    public List<Map> updateIgnoreInstance(String deployment_name, String instance_name, String instance_id, boolean ignore) {
+    public List<Map> updateIgnoreInstance(String deployment_name, String instance_name, String instance_id, boolean ignore) throws Exception {
         String param = "{\"ignore\":" + ignore + "}";
         return resEntityList("/deployments/" + deployment_name + "/instance_groups/" + instance_name + "/" + instance_id + "/ignore", HttpMethod.PUT, ContentsType.TextYaml, param);
     }
 
-    public boolean updateInstanceState(String deployment_name, String job_name, String job_id, String state) {
+    public boolean updateInstanceState(String deployment_name, String job_name, String job_id, String state) throws Exception {
         boolean status = false;
         try {
             resEntityList("/deployments/" + deployment_name + "/jobs/" + job_name + "/" + job_id + "?state=" + state, HttpMethod.PUT, ContentsType.TextYaml, null);
             status = true;
-
         } catch (Exception e) {
-
+            if (e instanceof NullPointerException) {
+                status = true;
+            } else {
+                status = false;
+            }
         }
         return status;
     }
@@ -291,7 +280,7 @@ public class BoshDirector extends BoshCode {
      */
 
 
-    public boolean deploy(String deployment_name, String service_name, String ea) throws Exception {
+    public boolean deploy(String deployment_name, String service_name) throws Exception {
 
         /*
          * 1. 인스턴스 상태 확인 - STOP인 애들이 있으면, 그애들을 Start로 활성화
@@ -304,20 +293,24 @@ public class BoshDirector extends BoshCode {
         List<Map> instances = getListInstances(deployment_name);
 
         for (Map instance : instances) {
-            System.out.println(instance.toString());
             if (instance.get("job").equals(service_name)) {
                 if (instance.get("cid") == null) {
                     try {
                         updateInstanceState(deployment_name, service_name, instance.get("id").toString(), BoshDirector.INSTANCE_STATE_START);
                         start_instance++;
-                    }catch (Exception e){
-                        System.out.println(e.getLocalizedMessage());
+                    } catch (Exception e) {
+                        if (e instanceof NullPointerException) {
+
+                        } else {
+                            return false;
+                        }
                     }
                     break;
                 }
             }
         }
-        if(start_instance == 0){
+
+        if (start_instance == 0) {
             /*
              * Manifest 값 추출
              */
@@ -330,13 +323,15 @@ public class BoshDirector extends BoshCode {
 
 
             String manifest = manifest_map.get("manifest").toString();
+            System.out.println("");
             System.out.println("Manifest before change......");
             System.out.println(manifest_map.get("manifest").toString());
 
             /*
              * Manifest 값의 특정 인스턴스 값을 변환
              */
-            manifest = manifestParser(manifest, service_name, ea);
+            manifest = manifestParser(manifest, service_name);
+            System.out.println("");
             System.out.println("After the change Manifest......");
             System.out.println(manifest);
 
@@ -345,11 +340,12 @@ public class BoshDirector extends BoshCode {
              * 현재 재배포할 Deployment가 작업중인지 확인
              */
             List<Map> result = getListRunningTasks();
+            System.out.println("");
             System.out.println("Deploying Deployment checking... " + result.size());
 
+            int count = 0;
             if (result != null && result.size() > 0) {
                 for (Map map : result) {
-                    System.out.println("::::: " + map.toString());
                     if (map.get("deployment").equals(deployment_name)) {
                         return false;
                     }
@@ -359,6 +355,7 @@ public class BoshDirector extends BoshCode {
             /*
              * 배포
              */
+            System.out.println("");
             System.out.println("Manifest Deploy...");
             postCreateAndUpdateDeployment(manifest);
 
@@ -367,7 +364,7 @@ public class BoshDirector extends BoshCode {
         Thread.sleep(10000);
         if (deployTask(deployment_name)) {
             return true;
-        }else{
+        } else {
             return false;
         }
 
@@ -376,15 +373,14 @@ public class BoshDirector extends BoshCode {
 
     private boolean deployTask(String deployment_name) throws Exception {
         boolean processing = true;
-        System.out.println("Deploy Process Check...");
+        int count = 0;
         while (processing) {
             List<Map> deployTask = getListRunningTasks();
             if (deployTask.size() > 0) {
                 int cnt = 0;
                 for (Map map : deployTask) {
                     if (map.get("deployment").equals(deployment_name)) {
-                        System.out.println(map.toString());
-                        System.out.println("==================================================");
+                        System.out.println("No." + (count++) + " : " + map.toString());
                         cnt++;
                     }
                 }
@@ -394,7 +390,6 @@ public class BoshDirector extends BoshCode {
                 }
                 Thread.sleep(10000);
             } else {
-                System.out.println("END");
                 processing = false;
             }
         }
@@ -402,37 +397,29 @@ public class BoshDirector extends BoshCode {
     }
 
 
-    private String manifestParser(String manifest, String service_name, String ea) throws Exception {
+    private String manifestParser(String manifest, String service_name) throws Exception {
         /*
          * String을 Map으로 변환하여, instances 값 찾아 변환
          */
-        Yaml loader = new Yaml();
+
+        System.out.printf(manifest);
+
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        Yaml loader = new Yaml(options);
         Map manifest_map = loader.load(manifest);
         List<Map> instance_groups = (List<Map>) manifest_map.get("instance_groups");
         for (Map map : instance_groups) {
             if (map.get("name").equals(service_name)) {
-                Map instance = map;
-                instance.put("instances", ea);
-                map.put("mysql", instance);
+                String strEa = map.get("instances").toString();
+                int ea = Integer.parseInt(strEa);
+                ea = ea + 1;
+                map.put("instances", ea);
             }
-
         }
+        manifest_map.put("instance_groups", instance_groups);
         return loader.dump(manifest_map);
     }
 
-
-    public Map getIgnore(String deployment_name) {
-        Map ignore = null;
-        List<Map> maps = getListInstances(deployment_name);
-        for (Map map : maps) {
-            if (map.get("expects_vm").equals("false")) {
-                System.out.println(map.get("job") + " " + map.get("id") + "  " + map.get("expects_vm"));
-                System.out.println("==================================================");
-                ignore = map;
-            }
-        }
-
-        return ignore;
-    }
 
 }
