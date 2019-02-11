@@ -14,8 +14,10 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 
 
 public class BoshDirector extends BoshCode {
@@ -111,12 +113,12 @@ public class BoshDirector extends BoshCode {
     ///// get /////
 
     //Info
-    public Map getInfo() {
-        return resEntityM("/info", HttpMethod.GET, ContentsType.TextYaml, null);
+    public Map getInfo() throws Exception {
+        return resEntityMap("/info", HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     //List configs
-    public String getConfigs(String name, String type, boolean latest) {
+    public Map getConfigs(String name, String type, boolean latest) throws Exception {
         String request_body = "?";
         if (!(type == null || type.equals(""))) {
             request_body += "type=" + type;
@@ -127,7 +129,7 @@ public class BoshDirector extends BoshCode {
             request_body += "&";
         }
         request_body += latest ? "latest=true" : "latest=false";
-        return resEntityS("/configs" + request_body, HttpMethod.GET, ContentsType.TextYaml, null);
+        return resEntityMap("/configs" + request_body, HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
 
@@ -282,12 +284,31 @@ public class BoshDirector extends BoshCode {
 
     public boolean deploy(String deployment_name, String service_name) throws Exception {
 
+        Map rs = new HashMap();
         /*
+         * 1. 인스턴스 상태 확인 - 배포 중인지 확인
          * 1. 인스턴스 상태 확인 - STOP인 애들이 있으면, 그애들을 Start로 활성화
          * 2. 없으면, 매니페스트 파일 추출
          * 3. 매니페스트 instance수를 늘리기
          * 4. 배포
          */
+
+        /*
+         * 현재 재배포할 Deployment가 작업중인지 확인
+         */
+        List<Map> result = getListRunningTasks();
+//        System.out.println("");
+//        System.out.println("Deploying Deployment checking... " + result.size());
+
+        int count = 0;
+        if (result != null && result.size() > 0) {
+            for (Map map : result) {
+                if (map.get("deployment").equals(deployment_name)) {
+                    throw new Exception("Instance is working.");
+                }
+            }
+        }
+
 
         int start_instance = 0;
         List<Map> instances = getListInstances(deployment_name);
@@ -318,45 +339,29 @@ public class BoshDirector extends BoshCode {
             System.out.println("Get Deployment manifest... ");
             Map manifest_map = getDeployments(deployment_name);
             if (manifest_map.size() == 0) {
-                return false;
+                throw new Exception("Not found manifest");
             }
 
 
             String manifest = manifest_map.get("manifest").toString();
-            System.out.println("");
-            System.out.println("Manifest before change......");
-            System.out.println(manifest_map.get("manifest").toString());
+//            System.out.println("");
+//            System.out.println("Manifest before change......");
+//            System.out.println(manifest_map.get("manifest").toString());
 
             /*
              * Manifest 값의 특정 인스턴스 값을 변환
              */
             manifest = manifestParser(manifest, service_name);
-            System.out.println("");
-            System.out.println("After the change Manifest......");
-            System.out.println(manifest);
+//            System.out.println("");
+//            System.out.println("After the change Manifest......");
+//            System.out.println(manifest);
 
-
-            /*
-             * 현재 재배포할 Deployment가 작업중인지 확인
-             */
-            List<Map> result = getListRunningTasks();
-            System.out.println("");
-            System.out.println("Deploying Deployment checking... " + result.size());
-
-            int count = 0;
-            if (result != null && result.size() > 0) {
-                for (Map map : result) {
-                    if (map.get("deployment").equals(deployment_name)) {
-                        return false;
-                    }
-                }
-            }
 
             /*
              * 배포
              */
-            System.out.println("");
-            System.out.println("Manifest Deploy...");
+//            System.out.println("");
+//            System.out.println("Manifest Deploy...");
             postCreateAndUpdateDeployment(manifest);
 
         }
@@ -365,7 +370,7 @@ public class BoshDirector extends BoshCode {
         if (deployTask(deployment_name)) {
             return true;
         } else {
-            return false;
+            throw new Exception("Bosh does not work..");
         }
 
     }
@@ -380,12 +385,10 @@ public class BoshDirector extends BoshCode {
                 int cnt = 0;
                 for (Map map : deployTask) {
                     if (map.get("deployment").equals(deployment_name)) {
-                        System.out.println("No." + (count++) + " : " + map.toString());
                         cnt++;
                     }
                 }
                 if (cnt == 0) {
-                    System.out.println("COUNT :: " + cnt);
                     return true;
                 }
                 Thread.sleep(10000);
@@ -402,7 +405,6 @@ public class BoshDirector extends BoshCode {
          * String을 Map으로 변환하여, instances 값 찾아 변환
          */
 
-        System.out.printf(manifest);
 
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
