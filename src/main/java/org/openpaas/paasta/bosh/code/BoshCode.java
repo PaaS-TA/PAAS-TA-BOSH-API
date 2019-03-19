@@ -10,6 +10,7 @@ public class BoshCode {
         public static String MultipartFormdata  = "multipart/form-data";
         public static String TextYaml= "text/yaml";
         public static String TextXml = "text/xml";
+        public static String TextHtml = "text/html";
         public static String ApplicationXml = "Application/xml";
         public static String MultipartRelated = "Multipart/related";
         public static String ApplicationXFixedRecord = "Application/X-FixedRecord";

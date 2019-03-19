@@ -7,11 +7,13 @@ import org.openpaas.paasta.bosh.util.SSLUtils;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.web.client.RestTemplate;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
+import java.net.HttpURLConnection;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -37,6 +39,15 @@ public class BoshDirector extends BoshCode {
     ObjectMapper objectMapper = new ObjectMapper();
 
     final RestTemplate restTemplate = new RestTemplate();
+
+    final RestTemplate not_redirect_restTemplate = new RestTemplate( new SimpleClientHttpRequestFactory(){
+        @Override
+        protected void prepareConnection(HttpURLConnection connection, String httpMethod ) {
+            connection.setInstanceFollowRedirects(false);
+        }
+    } );
+
+
 
 
     public BoshDirector(String client_id, String client_secret, String bosh_url, String oauth_url) {
@@ -86,6 +97,16 @@ public class BoshDirector extends BoshCode {
         });
     }
 
+    private HttpHeaders resEntityListHeader(String endpoint, HttpMethod method, String context_type, Object param) throws Exception {
+        HttpHeaders json;
+        if (param != null) {
+            json = not_redirect_restTemplate.exchange(bosh_url + endpoint, method, getHeader(context_type, param), String.class).getHeaders();
+        } else {
+            json = not_redirect_restTemplate.exchange(bosh_url + endpoint, method, getHeader(context_type, null), HttpHeaders.class).getHeaders();
+        }
+        return json;
+    }
+
     private Map resEntityMap(String endpoint, HttpMethod method, String context_type, Object param) throws Exception {
         String json = "";
         if (param != null) {
@@ -118,7 +139,7 @@ public class BoshDirector extends BoshCode {
     }
 
     //List configs
-    public Map getConfigs(String name, String type, boolean latest) throws Exception {
+    public String getConfigs(String name, String type, boolean latest) throws Exception {
         String request_body = "?";
         if (!(type == null || type.equals(""))) {
             request_body += "type=" + type;
@@ -129,7 +150,7 @@ public class BoshDirector extends BoshCode {
             request_body += "&";
         }
         request_body += latest ? "latest=true" : "latest=false";
-        return resEntityMap("/configs" + request_body, HttpMethod.GET, ContentsType.TextYaml, null);
+        return resEntityS("/configs" + request_body, HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
 
@@ -159,9 +180,37 @@ public class BoshDirector extends BoshCode {
     }
 
     //Retrieve task's log(tpye ex.. debug, event, result)
-    public Map getRetrieveTasksLog(String task_id, String type) throws Exception {
-        return resEntityMap("/tasks/" + task_id + "/output?type=" + type, HttpMethod.GET, ContentsType.TextYaml, null);
+    public List<Map> getResyktRetrieveTasksLog(String task_id) throws Exception {
+            String result = resEntityS("/tasks/" + task_id + "/output?type=result", HttpMethod.GET, ContentsType.TextHtml, null);
+            result = "["+result+"]";
+            result = result.replace("false}","false},");
+            result = result.replace("},\n]","}\n]");
+            return objectMapper.readValue(result, new TypeReference<List<Map>>() {});
     }
+
+    //Retrieve task's log(tpye ex.. debug, event, result)
+    public String getDebugRetrieveTasksLog(String task_id) throws Exception {
+        return resEntityS("/tasks/" + task_id + "/output?type=debug", HttpMethod.GET, ContentsType.TextHtml, null);
+    }
+
+    public String getUpdateVMIPS(String task_id) throws Exception{
+        String result = getDebugRetrieveTasksLog("249640");
+        int point = result.indexOf("Allocated dynamic IP");
+        result = result.substring(point,point+50);
+        point = result.indexOf("'");
+        result = result.substring(point+1);
+        point = result.indexOf("'");
+        return result.substring(0,point);
+    }
+
+    public String getStartVMIPS(String task_id, String instance_name, String instance_id) throws Exception{
+        String result = getDebugRetrieveTasksLog(task_id);
+        String instanceName = "instance=" + instance_name + "/" + instance_id;
+        result = result.substring(result.indexOf(instanceName)+10);
+        result = result.substring(result.indexOf(instanceName)-40, result.indexOf(instanceName));
+        return result.substring(result.indexOf("ip=")+3, result.indexOf(","));
+    }
+
 
     //List all uploaded stemcells
     public List<Map> getListStemcells() throws Exception {
@@ -194,8 +243,10 @@ public class BoshDirector extends BoshCode {
     }
 
     //List details of instances
-    public List<Map> getListDetailOfInstances(String deployment_name) throws Exception {
-        return resEntityList("/deployments/" + deployment_name + "/instances?format=full", HttpMethod.GET, ContentsType.TextYaml, null);
+    public String getListDetailOfInstances(String deployment_name) throws Exception {
+        String re[] = resEntityListHeader("/deployments/" + deployment_name + "/instances?format=full", HttpMethod.GET, ContentsType.TextHtml, null).toSingleValueMap().get("Location").split("/");
+        int length = re.length;
+        return re[length-1];
     }
 
     //List all VMs
@@ -204,8 +255,10 @@ public class BoshDirector extends BoshCode {
     }
 
     //List VM details
-    public List<Map> getListDetailDeploymentsVMS(String deployment_name) throws Exception {
-        return resEntityList("/deployments/" + deployment_name + "/vms?format=full", HttpMethod.GET, ContentsType.TextYaml, null);
+    public String getListDetailDeploymentsVMS(String deployment_name) throws Exception {
+        String re[] = resEntityListHeader("/deployments/" + deployment_name + "/vms?format=full", HttpMethod.GET, ContentsType.TextHtml, null).toSingleValueMap().get("Location").split("/");
+        int length = re.length;
+        return re[length-1];
     }
 
     //List events
@@ -216,6 +269,11 @@ public class BoshDirector extends BoshCode {
     //List events
     public Map getEvents(String event_id) throws Exception {
         return resEntityMap("/events/" + event_id, HttpMethod.GET, ContentsType.TextYaml, null);
+    }
+
+    //List deployment_locks
+    public String getListLocks() throws Exception{
+        return resEntityS("/locks", HttpMethod.GET, ContentsType.TextYaml, null);
     }
 
     ///// post /////
