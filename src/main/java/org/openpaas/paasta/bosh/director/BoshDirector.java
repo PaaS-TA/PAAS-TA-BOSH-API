@@ -180,7 +180,7 @@ public class BoshDirector extends BoshCode {
     }
 
     //Retrieve task's log(tpye ex.. debug, event, result)
-    public List<Map> getResyktRetrieveTasksLog(String task_id) throws Exception {
+    public List<Map> getResultRetrieveTasksLog(String task_id) throws Exception {
             String result = resEntityS("/tasks/" + task_id + "/output?type=result", HttpMethod.GET, ContentsType.TextHtml, null);
             result = "["+result+"]";
             result = result.replace("false}","false},");
@@ -194,7 +194,7 @@ public class BoshDirector extends BoshCode {
     }
 
     public String getUpdateVMIPS(String task_id) throws Exception{
-        String result = getDebugRetrieveTasksLog("249640");
+        String result = getDebugRetrieveTasksLog(task_id);
         int point = result.indexOf("Allocated dynamic IP");
         result = result.substring(point,point+50);
         point = result.indexOf("'");
@@ -207,8 +207,17 @@ public class BoshDirector extends BoshCode {
         String result = getDebugRetrieveTasksLog(task_id);
         String instanceName = "instance=" + instance_name + "/" + instance_id;
         result = result.substring(result.indexOf(instanceName)+10);
-        result = result.substring(result.indexOf(instanceName)-40, result.indexOf(instanceName));
+        result = result.substring(result.indexOf(instanceName)-50, result.indexOf(instanceName));
         return result.substring(result.indexOf("ip=")+3, result.indexOf(","));
+    }
+
+    public String getUpdateVMInstance(String task_id, String instance_name) throws Exception{
+        String result = getDebugRetrieveTasksLog(task_id);
+        result = result.substring(result.indexOf("INSERT INTO \"instances\""));
+        int point = result.indexOf(instance_name+"/");
+        int lenght = instance_name.length() +1;
+        result = result.substring(point + lenght, point + lenght + 36);
+        return result;
     }
 
 
@@ -342,59 +351,54 @@ public class BoshDirector extends BoshCode {
 
     public boolean deploy(String deployment_name, String service_name) throws Exception {
 
-        Map rs = new HashMap();
-        /*
-         * 1. 인스턴스 상태 확인 - 배포 중인지 확인
-         * 1. 인스턴스 상태 확인 - STOP인 애들이 있으면, 그애들을 Start로 활성화
-         * 2. 없으면, 매니페스트 파일 추출
-         * 3. 매니페스트 instance수를 늘리기
-         * 4. 배포
-         */
+        try {
+            Map rs = new HashMap();
+            /*
+             * 1. 매니페스트 파일 추출
+             * 2. 매니페스트 instance수를 늘리기
+             * 3. 배포
+             */
 
-        /*
-         * 현재 재배포할 Deployment가 작업중인지 확인
-         */
-        List<Map> result = getListRunningTasks();
+//        List<Map> result = getListRunningTasks();
 //        System.out.println("");
 //        System.out.println("Deploying Deployment checking... " + result.size());
 
-        int count = 0;
-        if (result != null && result.size() > 0) {
-            for (Map map : result) {
-                if (map.get("deployment").equals(deployment_name)) {
-                    throw new Exception("Instance is working.");
-                }
-            }
-        }
+//        int count = 0;
+//        if (result != null && result.size() > 0) {
+//            for (Map map : result) {
+//                if (map.get("deployment").equals(deployment_name)) {
+//                    throw new Exception("Instance is working.");
+//                }
+//            }
+//        }
 
 
-        int start_instance = 0;
-        List<Map> instances = getListInstances(deployment_name);
+//        int start_instance = 0;
+//        List<Map> instances = getListInstances(deployment_name);
+//
+//        for (Map instance : instances) {
+//            if (instance.get("job").equals(service_name)) {
+//                if (instance.get("cid") == null) {
+//                    try {
+//                        updateInstanceState(deployment_name, service_name, instance.get("id").toString(), BoshDirector.INSTANCE_STATE_START);
+//                        start_instance++;
+//                    } catch (Exception e) {
+//                        if (e instanceof NullPointerException) {
+//
+//                        } else {
+//                            return false;
+//                        }
+//                    }
+//                    break;
+//                }
+//            }
+//        }
 
-        for (Map instance : instances) {
-            if (instance.get("job").equals(service_name)) {
-                if (instance.get("cid") == null) {
-                    try {
-                        updateInstanceState(deployment_name, service_name, instance.get("id").toString(), BoshDirector.INSTANCE_STATE_START);
-                        start_instance++;
-                    } catch (Exception e) {
-                        if (e instanceof NullPointerException) {
-
-                        } else {
-                            return false;
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-
-        if (start_instance == 0) {
+//        if (start_instance == 0) {
             /*
              * Manifest 값 추출
              */
 
-            System.out.println("Get Deployment manifest... ");
             Map manifest_map = getDeployments(deployment_name);
             if (manifest_map.size() == 0) {
                 throw new Exception("Not found manifest");
@@ -402,35 +406,21 @@ public class BoshDirector extends BoshCode {
 
 
             String manifest = manifest_map.get("manifest").toString();
-//            System.out.println("");
-//            System.out.println("Manifest before change......");
-//            System.out.println(manifest_map.get("manifest").toString());
 
             /*
              * Manifest 값의 특정 인스턴스 값을 변환
              */
             manifest = manifestParser(manifest, service_name);
-//            System.out.println("");
-//            System.out.println("After the change Manifest......");
-//            System.out.println(manifest);
 
 
             /*
              * 배포
              */
-//            System.out.println("");
-//            System.out.println("Manifest Deploy...");
             postCreateAndUpdateDeployment(manifest);
-
-        }
-
-        Thread.sleep(10000);
-        if (deployTask(deployment_name)) {
             return true;
-        } else {
-            throw new Exception("Bosh does not work..");
+        } catch (Exception e){
+            throw new Exception("Deploy Error : " + e.getMessage());
         }
-
     }
 
 
