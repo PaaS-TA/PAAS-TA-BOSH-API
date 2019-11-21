@@ -207,8 +207,14 @@ public class BoshDirector extends BoshCode {
         String result = getDebugRetrieveTasksLog(task_id);
         String instanceName = "instance=" + instance_name + "/" + instance_id;
         result = result.substring(result.indexOf(instanceName)+10);
-        result = result.substring(result.indexOf(instanceName)-50, result.indexOf(instanceName));
-        return result.substring(result.indexOf("ip=")+3, result.indexOf(","));
+        String subresult = result.substring(result.indexOf(instanceName)-50, result.indexOf(instanceName)+300);
+        result = subresult.substring(subresult.indexOf("ip=")+3);
+        result = result.substring(0, result.indexOf(","));
+        if(result.length() < 3){
+            result = subresult.substring(subresult.lastIndexOf("ip=")+3);
+            result = result.substring(0, result.indexOf(","));
+        }
+        return result;
     }
 
     public String getUpdateVMInstance(String task_id, String instance_name) throws Exception{
