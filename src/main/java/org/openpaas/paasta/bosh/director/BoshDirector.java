@@ -16,10 +16,9 @@ import org.yaml.snakeyaml.Yaml;
 import java.net.HttpURLConnection;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.UUID;
 
 
 public class BoshDirector extends BoshCode {
@@ -358,53 +357,6 @@ public class BoshDirector extends BoshCode {
     public boolean deploy(String deployment_name, String service_name) throws Exception {
 
         try {
-            Map rs = new HashMap();
-            /*
-             * 1. 매니페스트 파일 추출
-             * 2. 매니페스트 instance수를 늘리기
-             * 3. 배포
-             */
-
-//        List<Map> result = getListRunningTasks();
-//        System.out.println("");
-//        System.out.println("Deploying Deployment checking... " + result.size());
-
-//        int count = 0;
-//        if (result != null && result.size() > 0) {
-//            for (Map map : result) {
-//                if (map.get("deployment").equals(deployment_name)) {
-//                    throw new Exception("Instance is working.");
-//                }
-//            }
-//        }
-
-
-//        int start_instance = 0;
-//        List<Map> instances = getListInstances(deployment_name);
-//
-//        for (Map instance : instances) {
-//            if (instance.get("job").equals(service_name)) {
-//                if (instance.get("cid") == null) {
-//                    try {
-//                        updateInstanceState(deployment_name, service_name, instance.get("id").toString(), BoshDirector.INSTANCE_STATE_START);
-//                        start_instance++;
-//                    } catch (Exception e) {
-//                        if (e instanceof NullPointerException) {
-//
-//                        } else {
-//                            return false;
-//                        }
-//                    }
-//                    break;
-//                }
-//            }
-//        }
-
-//        if (start_instance == 0) {
-            /*
-             * Manifest 값 추출
-             */
-
             Map manifest_map = getDeployments(deployment_name);
             if (manifest_map.size() == 0) {
                 throw new Exception("Not found manifest");
@@ -474,6 +426,39 @@ public class BoshDirector extends BoshCode {
             }
         }
         manifest_map.put("instance_groups", instance_groups);
+        return loader.dump(manifest_map);
+    }
+
+    public String updateServiceInstance(String deployment_name, String job_name, String vm_type) throws Exception {
+        Map deployment = getDeployments(deployment_name);
+        String deployment_manifest = deployment.get("manifest").toString();
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        Yaml loader = new Yaml(options);
+        Map manifest_map = loader.load(deployment_manifest);
+        List<Map> instance_groups = (List<Map>) manifest_map.get("instance_groups");
+        for (Map map : instance_groups) {
+            if (map.get("name").equals(job_name)) {
+                map.put("vm_type", vm_type);
+            }
+        }
+        postCreateAndUpdateDeployment(loader.dump(manifest_map));
+        return loader.dump(manifest_map);
+    }
+
+    public String createServiceInstance(String job_name, String vm_type, String yml) throws Exception {
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        Yaml loader = new Yaml(options);
+        Map manifest_map = loader.load(yml);
+        manifest_map.put("name",manifest_map.get("name").toString()+"-"+ UUID.randomUUID());
+        List<Map> instance_groups = (List<Map>) manifest_map.get("instance_groups");
+        for (Map map : instance_groups) {
+            if (map.get("name").equals(job_name)) {
+                map.put("vm_type", vm_type);
+            }
+        }
+        postCreateAndUpdateDeployment(loader.dump(manifest_map));
         return loader.dump(manifest_map);
     }
 
