@@ -34,7 +34,10 @@ public class BoshDirector extends BoshCode {
     private int expiresIn;
 
     private String oauth_url;
-
+    private String bosh_version;
+    public String getBosh_version() {
+        return bosh_version;
+    }
     ObjectMapper objectMapper = new ObjectMapper();
 
     final RestTemplate restTemplate = new RestTemplate();
@@ -54,6 +57,23 @@ public class BoshDirector extends BoshCode {
         this.client_secret = client_secret;
         this.bosh_url = bosh_url;
         this.oauth_url = oauth_url;
+        try {
+            SSLUtils.turnOffSslChecking();
+            oAuth2AccessToken = this.getAccessToken();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (KeyManagementException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public BoshDirector(String client_id, String client_secret, String bosh_url, String oauth_url, String bosh_version) {
+        this.client_id = client_id;
+        this.client_secret = client_secret;
+        this.bosh_url = bosh_url;
+        this.oauth_url = oauth_url;
+        this.bosh_version = bosh_version;
         try {
             SSLUtils.turnOffSslChecking();
             oAuth2AccessToken = this.getAccessToken();
@@ -185,6 +205,15 @@ public class BoshDirector extends BoshCode {
             result = result.replace("false}","false},");
             result = result.replace("},\n]","}\n]");
             return objectMapper.readValue(result, new TypeReference<List<Map>>() {});
+    }
+
+    //director version over v270.11 current v271.2 2020-10-20
+    public List<Map> getResultRetrieveTasksLogv271(String task_id) throws Exception {
+        String result = resEntityS("/tasks/" + task_id + "/output?type=result", HttpMethod.GET, ContentsType.TextHtml, null);
+        result = result.replace("{\"vm_cid",",{\"vm_cid");
+        result = result.substring(1);
+        result = "["+result+"]";
+        return objectMapper.readValue(result, new TypeReference<List<Map>>() {});
     }
 
     //Retrieve task's log(tpye ex.. debug, event, result)
