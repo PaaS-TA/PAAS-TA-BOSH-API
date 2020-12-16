@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -16,6 +17,8 @@ import org.yaml.snakeyaml.Yaml;
 import java.net.HttpURLConnection;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -49,9 +52,6 @@ public class BoshDirector extends BoshCode {
         }
     } );
 
-
-
-
     public BoshDirector(String client_id, String client_secret, String bosh_url, String oauth_url) {
         this.client_id = client_id;
         this.client_secret = client_secret;
@@ -66,7 +66,6 @@ public class BoshDirector extends BoshCode {
             e.printStackTrace();
         }
     }
-
 
     public BoshDirector(String client_id, String client_secret, String bosh_url, String oauth_url, String bosh_version) {
         this.client_id = client_id;
@@ -87,7 +86,6 @@ public class BoshDirector extends BoshCode {
     private OAuth2AccessToken getAccessToken() {
         return restTemplate.exchange(oauth_url + "/oauth/token?client_id=" + client_id + "&client_secret=" + client_secret + "&grant_type=client_credentials", HttpMethod.POST, null, OAuth2AccessToken.class).getBody();
     }
-
 
     private HttpEntity<Object> getHeader(String content_type, Object param) {
         if (oAuth2AccessToken.getExpiresIn() <= 180) {
@@ -381,24 +379,23 @@ public class BoshDirector extends BoshCode {
     /*
      * 서비스 증가 및 생성
      */
-
-
     public boolean deploy(String deployment_name, String service_name) throws Exception {
-
+        return this.deploy(deployment_name, service_name, null);
+    }
+    
+    public boolean deploy(String deployment_name, String service_name, String staticIp) throws Exception {
         try {
             Map manifest_map = getDeployments(deployment_name);
             if (manifest_map.size() == 0) {
                 throw new Exception("Not found manifest");
             }
 
-
             String manifest = manifest_map.get("manifest").toString();
 
             /*
              * Manifest 값의 특정 인스턴스 값을 변환
              */
-            manifest = manifestParser(manifest, service_name);
-
+            manifest = manifestParser(manifest, service_name, staticIp);
 
             /*
              * 배포
@@ -434,13 +431,10 @@ public class BoshDirector extends BoshCode {
         return true;
     }
 
-
-    private String manifestParser(String manifest, String service_name) throws Exception {
-        /*
+    private String manifestParser(String manifest, String service_name, String staticIp) throws Exception {
+    	/*
          * String을 Map으로 변환하여, instances 값 찾아 변환
          */
-
-
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml loader = new Yaml(options);
@@ -452,6 +446,30 @@ public class BoshDirector extends BoshCode {
                 int ea = Integer.parseInt(strEa);
                 ea = ea + 1;
                 map.put("instances", ea);
+                
+                // vm 에 public 할당. (manifest 에 임의 추가, web ide 이외의 vm 은 구조 확인 필요)
+                if(!StringUtils.isEmpty(staticIp)) {
+                	// vip setting
+                    List<Map<String, Object>> networksList = (List<Map<String, Object>>)map.get("networks");
+                    boolean hasNetwork = false;
+                    for(Map<String, Object> networkMap : networksList) {
+                    	if("vip".equals(networkMap.get("name"))) {
+                    		hasNetwork = true;
+                    		List<String> staticIpList = (List<String>)networkMap.get("static_ips");
+                    		staticIpList.add(staticIp);
+                    	}
+                    }
+                    
+                    if(!hasNetwork) {
+                    	Map<String, Object> networkMap = new HashMap<String, Object>();
+                    	List<String> staticIpList = new ArrayList<String>();
+                    	staticIpList.add(staticIp);
+                    	networkMap.put("name", "vip");
+                    	networkMap.put("static_ips", staticIpList);
+                    	
+                    	networksList.add(networkMap);
+                    }
+                }
             }
         }
         manifest_map.put("instance_groups", instance_groups);
@@ -478,9 +496,12 @@ public class BoshDirector extends BoshCode {
     public String createServiceInstance(String job_name, String vm_type, String yml) throws Exception {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        
         Yaml loader = new Yaml(options);
+        
         Map manifest_map = loader.load(yml);
         manifest_map.put("name",manifest_map.get("name").toString()+"-"+ UUID.randomUUID());
+        
         List<Map> instance_groups = (List<Map>) manifest_map.get("instance_groups");
         for (Map map : instance_groups) {
             if (map.get("name").equals(job_name)) {
@@ -490,6 +511,4 @@ public class BoshDirector extends BoshCode {
         postCreateAndUpdateDeployment(loader.dump(manifest_map));
         return loader.dump(manifest_map);
     }
-
-
 }
